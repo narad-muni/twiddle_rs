@@ -4,6 +4,8 @@ use twiddler::Twiddle;
 struct X {
     pub a: u8,
     pub b: u16,
+    pub x: f64,
+    pub z: [f64;2],
     pub y: Y,
 }
 
@@ -22,7 +24,7 @@ struct Z {
 }
 
 fn main() {
-    let mut z = X {a:1, b:7811, y: Y {
+    let mut z = X {a:1, b:7811, x: 2f64, z: [1.05f64, 1.05f64], y: Y {
         a: 2,
         b: 33566,
         arr: [7811, 1092],

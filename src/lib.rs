@@ -29,6 +29,16 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
             Some(quote! {
                 self.#field_name = self.#field_name.to_be();
             })
+        } else if is_floating_type(field_type) { // handle conversion for floating types
+            Some(quote! {
+                self.#field_name = f64::from_le_bytes(self.#field_name.to_be_bytes());
+            })
+        } else if arr_type.is_some() && is_floating_type(arr_type.unwrap()) { // handle conversion for floating type array
+            Some(quote! {
+                self.#field_name.iter_mut().for_each(|el| {
+                    *el = f64::from_le_bytes(el.to_be_bytes());
+                });
+            })
         } else if arr_type.is_some() && is_numeric_type(arr_type.unwrap()) { // Check if type is array and numeric
             Some(quote! {
                 self.#field_name.iter_mut().for_each(|el| {
@@ -69,6 +79,19 @@ fn is_numeric_type(ty: &Type) -> bool {
             match type_segment.ident.to_string().as_str() {
                 "i8" | "i16" | "i32" | "i64" | "i128" | "isize" |
                 "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => true,
+                _ => false,
+            }
+        }
+        _ => false,
+    }
+}
+
+fn is_floating_type(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) => {
+            let type_segment = type_path.path.segments.last().unwrap();
+            match type_segment.ident.to_string().as_str() {
+                "f64" | "f32"  => true,
                 _ => false,
             }
         }
