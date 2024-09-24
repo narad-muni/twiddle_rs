@@ -19,8 +19,6 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
         panic!("ToBe can only be derived for structs");
     };
 
-    println!("{fields:#?}");
-
     let assignments = fields.iter().filter_map(|field| {
         let field_name = &field.ident;
         let field_type = &field.ty;
@@ -95,7 +93,6 @@ fn is_primitive(ty: &Type) -> bool {
 }
 
 fn get_arr_ty(ty: &Type) -> Option<&Type> {
-    println!("{ty:?}");
     match ty {
         Type::Array(arr) => {
             Some(&arr.elem)
