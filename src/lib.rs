@@ -19,16 +19,35 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
         panic!("ToBe can only be derived for structs");
     };
 
+    println!("{fields:#?}");
+
     let assignments = fields.iter().filter_map(|field| {
         let field_name = &field.ident;
         let field_type = &field.ty;
+        let arr_type = get_arr_ty(&field.ty);
 
-        // Check if the field type is numeric (you can customize this logic)
+        // Check if the field type is numeric
         if is_numeric_type(field_type) {
             Some(quote! {
                 self.#field_name = self.#field_name.to_be();
             })
-        } else {
+        } else if arr_type.is_some() && is_numeric_type(arr_type.unwrap()) { // Check if type is array and numeric
+            Some(quote! {
+                self.#field_name.iter_mut().for_each(|el| {
+                    *el = el.to_be();
+                });
+            })
+        } else if arr_type.is_some() && !is_primitive(arr_type.unwrap()) { // check if type is array but not primitive
+            Some(quote! {
+                self.#field_name.iter_mut().for_each(|el| {
+                    el.twiddle();
+                });
+            })
+        } else if !is_primitive(field_type) { // check if type is not primitive, this should be last because array is not primitive
+            Some(quote! {
+                self.#field_name.twiddle();
+            })   
+        }else {
             None
         }
     });
@@ -56,5 +75,31 @@ fn is_numeric_type(ty: &Type) -> bool {
             }
         }
         _ => false,
+    }
+}
+
+fn is_primitive(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) => {
+            let type_segment = type_path.path.segments.last().unwrap();
+            match type_segment.ident.to_string().as_str() {
+                "u8" | "u16" | "u32" | "u64" | "u128" |
+                "i8" | "i16" | "i32" | "i64" | "i128" |
+                "f32" | "f64" | "bool" | "char" | "str" |
+                "usize" | "isize" => true,
+                _ => false,
+            }
+        }
+        _ => false,
+    }
+}
+
+fn get_arr_ty(ty: &Type) -> Option<&Type> {
+    println!("{ty:?}");
+    match ty {
+        Type::Array(arr) => {
+            Some(&arr.elem)
+        },
+        _ => None,
     }
 }
