@@ -35,9 +35,13 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
             })
         } else if arr_type.is_some() && is_floating_type(arr_type.unwrap()) { // handle conversion for floating type array
             Some(quote! {
-                self.#field_name.iter_mut().for_each(|el| {
+                let mut #field_name = self.#field_name;
+
+                #field_name.iter_mut().for_each(|el| {
                     *el = f64::from_le_bytes(el.to_be_bytes());
                 });
+
+                self.#field_name = #field_name;
             })
         } else if arr_type.is_some() && is_numeric_type(arr_type.unwrap()) { // Check if type is array and numeric
             Some(quote! {

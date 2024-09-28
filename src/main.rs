@@ -1,6 +1,9 @@
+use std::time::Instant;
+
 use twiddler::Twiddle;
 
-#[derive(Twiddle, Debug)]
+#[derive(Debug, Twiddle, Clone, Copy)]
+#[repr(C, packed(2))]
 struct X {
     pub a: u8,
     pub b: u16,
@@ -9,7 +12,8 @@ struct X {
     pub y: Y,
 }
 
-#[derive(Twiddle, Debug)]
+#[derive(Debug, Twiddle, Clone, Copy)]
+#[repr(C, packed(2))]
 struct Y {
     pub a: u8,
     pub b: u16,
@@ -17,7 +21,8 @@ struct Y {
     pub zrr: [Z; 2],
 }
 
-#[derive(Twiddle, Debug)]
+#[derive(Debug, Twiddle, Clone, Copy)]
+#[repr(C, packed(2))]
 struct Z {
     a :u8,
     b: u16,
@@ -31,7 +36,14 @@ fn main() {
         zrr: [Z {a: 123, b: 33566}, Z {a: 30, b: 7811}],
     }};
 
-    z.twiddle();
+    let start = Instant::now();
 
-    println!("{z:?}");
+    for _ in 0..100 {
+        z.twiddle();
+
+        // mylzo::compress(input, output)
+
+    }
+
+    println!("{z:?} {:?}", start.elapsed());
 }
