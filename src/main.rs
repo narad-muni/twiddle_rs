@@ -27,6 +27,13 @@ struct Z {
     a :u8,
     b: u16,
 }
+// impl Singular {
+//     fn twiddle(&mut self) {
+//         match self {
+//             Singular::Z(z) => z.twiddle(),
+//         }
+//     }
+// }
 
 fn main() {
     let mut z = X {a:1, b:7811, x: 2f64, z: [1.05f64, 1.05f64], y: Y {

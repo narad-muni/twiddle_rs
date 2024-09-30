@@ -72,8 +72,9 @@ checksum = "561d97a539a36e26a9a5fad1ea11a3039a67714694aaa379433e580854bc3dc5"
 
 [[package]]
 name = "mylzo"
-version = "0.1.0"
-source = "git+https://github.com/narad-muni/mylzo#accd1f528cf5a8e6f0565c0eb984916b141660b0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e883c1d05f9f64100744bea9e5a8463ab4e449b24036a1f5c3963b35c2ae7e03"
 dependencies = [
  "cc",
  "libc",
