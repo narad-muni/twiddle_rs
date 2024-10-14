@@ -1,24 +1,61 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
+use syn::{parse_macro_input, punctuated::Punctuated, token::Comma, Data, DataEnum, DeriveInput, Field, Fields, Ident, Type};
 
 extern crate proc_macro;
 
 #[proc_macro_derive(Twiddle)]
 pub fn derive_twiddle(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
-    let struct_name = input.ident;
+    let ident = input.ident;
 
     // Generate code to reassign numeric fields
-    let fields = if let Data::Struct(data_struct) = input.data {
+    let stream = if let Data::Struct(data_struct) = input.data {
         match data_struct.fields {
-            Fields::Named(fields) => fields.named,
+            Fields::Named(fields) => process_struct(fields.named, ident),
             _ => panic!("ToBe can only be derived for structs with named fields"),
         }
+    } else if let Data::Enum(data_struct) = input.data {
+        process_enum(data_struct, ident)
     } else {
-        panic!("ToBe can only be derived for structs");
+        panic!("ToBe can only be derived for structs or enums {:#?}", input.data);
     };
 
+    stream
+ 
+}
+
+fn process_enum(data_enum: DataEnum, ident: Ident) -> TokenStream {
+    // Loop over the enum variants
+    let variants: Vec<_> = data_enum.variants.iter().map(|variant| {
+        let variant_name = &variant.ident;
+        match &variant.fields {
+            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
+                let field_type = &fields.unnamed[0].ty;
+                // Generate match arms for each variant
+                quote! {
+                    #ident::#variant_name(value) => value.twiddle()
+                }
+            }
+            _ => panic!("Each enum variant should have exactly one unnamed field"),
+        }
+    }).collect();
+
+    // Generate the implementation
+    let expanded = quote! {
+        impl #ident {
+            pub fn twiddle(&mut self) {
+                match self {
+                    #(#variants),*
+                }
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+fn process_struct(fields: Punctuated<Field, Comma>, ident: Ident) -> TokenStream {
     let assignments = fields.iter().filter_map(|field| {
         let field_name = &field.ident;
         let field_type = &field.ty;
@@ -55,7 +92,7 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
                     el.twiddle();
                 });
             })
-        } else if !is_primitive(field_type) { // check if type is not primitive, this should be last because array is not primitive
+        } else if !is_primitive(field_type) && !arr_type.is_some() { // check if type is not primitive, this should be last because array is not primitive
             Some(quote! {
                 self.#field_name.twiddle();
             })   
@@ -65,7 +102,7 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl #struct_name {
+        impl #ident {
             pub fn twiddle(&mut self) {
                 #(#assignments)*
             }
@@ -73,7 +110,6 @@ pub fn derive_twiddle(item: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(expanded)
- 
 }
 
 fn is_numeric_type(ty: &Type) -> bool {
